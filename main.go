@@ -55,7 +55,6 @@ func dbInsert(content string, image *multipart.FileHeader, filename string) {
 	db := connectGorm()
 	defer db.Close()
 	//Insert処理
-	fmt.Printf("%T, %v",image,image)
 	db.Create(&Tweet{Content: content, Image: image, File: filename})
 }
 
@@ -96,11 +95,6 @@ func dbDelete(id int) {
 	db.Delete(&tweet)
 }
 
-//func getFile(file string) {
-//	db := connectGorm()
-//	db.Create(&Tweet{File: file})
-//}
-
 //ユーザー登録処理
 func createUser(username, password string) []error {
 	passwordEncrypt, _ := crypto.PasswordEncrypt(password)
@@ -127,9 +121,8 @@ func getUser(username string) User {
 
 func main() {
 	router := gin.Default()
+	router.Static("/assets", "./assets") //画像の位置を特定
 	router.LoadHTMLGlob("views/*.html")
-
-	//router.Use(static.Serve("/", static.LocalFile("./assets", true)))
 
 	dbInit()
 
@@ -163,25 +156,9 @@ func main() {
 			thumb.Save(filename)
 
 			content := c.PostForm("content")
-			//file, err := os.Open(fmt.Sprintf("assets/%s_%x.png",
-			//	time.Now().Format("20060102150405"), h[:4]))
-			//if err != nil {
-			//	log.Fatal(err)
-			//}
-			//
-			//image, err := png.Decode(file)
-			//if err != nil {
-			//	log.Fatal(err)
-			//}
-			//file.Close()
-			//
-			//buffer := new(bytes.Buffer)
-			//if err := jpeg.Encode(buffer, image, nil); err != nil {
-			//	log.Println("unable to encode image.")
-			//}
-			//imageBytes := buffer.Bytes()
+
 			file, err := c.FormFile("image")
-			//getFile(filename)
+
 			dbInsert(content, file, filename)
 			//302一時的なリダイレクト
 			c.Redirect(302, "/")
