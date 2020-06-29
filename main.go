@@ -5,9 +5,10 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/go-sql-driver/mysql"
 	"fmt"
-	"golang.org/x/crypto/bcrypt"
+	"log"
 	"net/http"
 	"strconv"
+	"tweet/crypto"
 )
 
 type Tweet struct {
@@ -17,7 +18,7 @@ type Tweet struct {
 
 type User struct {
 	gorm.Model
-	Username string `form:"username" binding:"required" gorm:"unique;not null"`
+	Username string `form:"username" binding:"required"`
 	Password string `form:"password" binding:"required"`
 }
 
@@ -90,20 +91,28 @@ func dbDelete(id int) {
 
 //ユーザー登録処理
 func createUser(username, password string) []error {
-	passwordEncrypt, _ := bcrypt.GenerateFromPassword([]byte(password),12)
-	hash := []byte(password)
-	err := bcrypt.CompareHashAndPassword(hash, []byte(password))
-	if err != nil {
-		panic(err)
-	}
+	passwordEncrypt, _ := crypto.PasswordEncrypt(password)
 	db := connectGorm()
 	defer db.Close()
-
-	if err := db.Create(&User{Username: username, Password: string(passwordEncrypt)}).GetErrors(); err != nil {
+	// Insert処理
+	if err := db.Create(&User{Username: username, Password: passwordEncrypt}).GetErrors(); err != nil {
 		return err
 	}
 	return nil
 }
+
+func getUser(username string) User {
+	db := connectGorm()
+	defer db.Close()
+	var user User
+	db.First(&user, "username = ?", username)
+	return user
+}
+
+/*
+
+
+*/
 
 func main() {
 	router := gin.Default()
@@ -198,6 +207,32 @@ func main() {
 			if err := createUser(username, password); err != nil {
 				c.HTML(http.StatusBadRequest, "signup.html", gin.H{"err": err})
 			}
+			c.Redirect(302, "/")
+		}
+	})
+
+	router.GET("/login", func(c *gin.Context) {
+		c.HTML(200, "login.html", gin.H{})
+	})
+
+	//ユーザーログイン
+	router.POST("/login", func(c *gin.Context) {
+		//DBから取得したユーザーパスワード(Hash)
+		dbPassword := getUser(c.PostForm("username")).Password
+		log.Println(dbPassword)
+		//フォームから取得したユーザーパスワード
+		formPassword := c.PostForm("password")
+
+		hash := []byte(dbPassword)
+
+		fmt.Println(string(hash))
+		//ユーザーパスワードの比較
+		if err := crypto.CompareHashAndPassword(dbPassword, formPassword); err != nil {
+			log.Println("Login ERROR")
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{"err": err})
+			c.Abort()
+		} else {
+			log.Println("Success!!")
 			c.Redirect(302, "/")
 		}
 	})
