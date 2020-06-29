@@ -13,8 +13,9 @@
     <div class="wrap">
         <div class="input">
             <p>{{.err}}</p>
-            <form action="/new" method="post">
+            <form action="/new" method="post" enctype="multipart/form-data">
                 <p><input type="text" name="content" size="30" placeholder="type a text..."/></p>
+                <input type="file" name="image">
                 <p><input type="submit" value="submit" /></p>
             </form>
         </div>
