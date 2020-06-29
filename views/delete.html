@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <h1>Delete Confirmation</h1>
+    <ul>
+        <li>Content： {{.tweet.Content}}</li>
+        <li>Created_at： {{.tweet.CreatedAt}}</li>
+    </ul>
+
+    <form method="post" action="/delete/{{.tweet.ID}}">
+        <p><input type="submit" value="delete"></p>
+        <p><a href="/">Back</a></p>
+    </form>
+</body>
+</html>
