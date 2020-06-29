@@ -14,6 +14,12 @@ type Tweet struct {
 	Content string	`form:"content" binding:"required"`
 }
 
+type User struct {
+	gorm.Model
+	Username string `form:"username" binding:"required" gorm:"unique;not null"`
+	Password string `form:"password" binding:"required"`
+}
+
 func connectGorm() *gorm.DB {
 	dbUser := "norun"
 	dbPass := "tomoya0128"
@@ -34,6 +40,7 @@ func dbInit() {
 	db := connectGorm()
 	defer db.Close()
 	db.AutoMigrate(&Tweet{}) //構造体に基づいてテーブル作成
+	db.AutoMigrate(&User{})
 }
 
 //データインサート
