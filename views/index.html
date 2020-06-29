@@ -24,7 +24,7 @@
                 {{range.tweets}}
                     <li>
                         {{.Content}}
-                        {{.File}}
+                        <img src="{{.File}}">
                         <label><a href="/detail/{{.ID}}">Edit</a></label>
                         <label><a href="/delete_check/{{.ID}}">Delete</a></label>
                     </li>
