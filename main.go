@@ -19,8 +19,9 @@ func connectGorm() *gorm.DB {
 	dbPass := "tomoya0128"
 	dbProtocol := "tcp(127.0.0.1:3306)"
 	dbName := "tweet_test"
-	connectTemplate := "%s:%s@%s/%s"
-	connect := fmt.Sprintf(connectTemplate, dbUser, dbPass, dbProtocol, dbName)
+	Parse := "parseTime=true"
+	connectTemplate := "%s:%s@%s/%s?%s"
+	connect := fmt.Sprintf(connectTemplate, dbUser, dbPass, dbProtocol, dbName, Parse)
 	db, err := gorm.Open("mysql", connect)
 
 	if err != nil {
