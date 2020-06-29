@@ -1,19 +1,25 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
-	_ "github.com/go-sql-driver/mysql"
+	"crypto/sha1"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jinzhu/gorm"
+	"github.com/olahol/go-imageupload"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"strconv"
+	"time"
 	"tweet/crypto"
 )
 
 type Tweet struct {
 	gorm.Model
-	Content string	`form:"content" binding:"required"`
+	Content string                `form:"content" binding:"required"`
+	Image   *multipart.FileHeader
+	File   string
 }
 
 type User struct {
@@ -45,11 +51,11 @@ func dbInit() {
 }
 
 //データインサート
-func dbInsert(content string) {
+func dbInsert(content string, image *multipart.FileHeader, filename string) {
 	db := connectGorm()
 	defer db.Close()
 	//Insert処理
-	db.Create(&Tweet{Content: content})
+	db.Create(&Tweet{Content: content, Image: image, File: filename})
 }
 
 //db更新
@@ -115,6 +121,7 @@ func getUser(username string) User {
 
 func main() {
 	router := gin.Default()
+	router.Static("/assets", "./assets") //画像の位置を特定
 	router.LoadHTMLGlob("views/*.html")
 
 	dbInit()
@@ -128,15 +135,31 @@ func main() {
 	//登録
 	router.POST("/new", func(c *gin.Context) {
 		var form Tweet
-
+		img, err := imageupload.Process(c.Request, "image") //fieldにはname属性をいれる
+		if err != nil {
+			panic(err)
+		}
 		//validation
 		if err := c.Bind(&form); err != nil {
 			tweets := dbGetAll()
 			c.HTML(http.StatusBadRequest, "index.html", gin.H{"tweets": tweets, "err": err})
 			c.Abort()
 		} else {
+			thumb, err := imageupload.ThumbnailPNG(img, 300, 300)
+			if err != nil {
+				panic(err)
+			}
+			h := sha1.Sum(thumb.Data)
+
+			filename := fmt.Sprintf("assets/%s_%x.png",
+				time.Now().Format("20060102150405"), h[:4])
+			thumb.Save(filename)
+
 			content := c.PostForm("content")
-			dbInsert(content)
+
+			file, err := c.FormFile("image")
+
+			dbInsert(content, file, filename)
 			//302一時的なリダイレクト
 			c.Redirect(302, "/")
 		}
@@ -168,7 +191,7 @@ func main() {
 	//削除確認
 	router.GET("/delete_check/:id", func(c *gin.Context) {
 		n := c.Param("id")
-		id , err := strconv.Atoi(n)
+		id, err := strconv.Atoi(n)
 		if err != nil {
 			panic(err)
 		}
@@ -238,4 +261,3 @@ func main() {
 
 	router.Run()
 }
-
