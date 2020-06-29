@@ -18,8 +18,8 @@ import (
 type Tweet struct {
 	gorm.Model
 	Content string                `form:"content" binding:"required"`
-	Image   *multipart.FileHeader `form:"image"`
-	//Image   [20]byte `form:"image"`
+	Image   *multipart.FileHeader
+	File   string
 }
 
 type User struct {
@@ -51,11 +51,12 @@ func dbInit() {
 }
 
 //データインサート
-func dbInsert(content string, image *multipart.FileHeader) {
+func dbInsert(content string, image *multipart.FileHeader, filename string) {
 	db := connectGorm()
 	defer db.Close()
 	//Insert処理
-	db.Create(&Tweet{Content: content, Image: image})
+	fmt.Printf("%T, %v",image,image)
+	db.Create(&Tweet{Content: content, Image: image, File: filename})
 }
 
 //db更新
@@ -94,6 +95,11 @@ func dbDelete(id int) {
 	db.First(&tweet, id)
 	db.Delete(&tweet)
 }
+
+//func getFile(file string) {
+//	db := connectGorm()
+//	db.Create(&Tweet{File: file})
+//}
 
 //ユーザー登録処理
 func createUser(username, password string) []error {
@@ -151,15 +157,32 @@ func main() {
 				panic(err)
 			}
 			h := sha1.Sum(thumb.Data)
-			thumb.Save(fmt.Sprintf("assets/%s_%x.png",
-				time.Now().Format("20060102150405"), h[:4]))
+
+			filename := fmt.Sprintf("assets/%s_%x.png",
+				time.Now().Format("20060102150405"), h[:4])
+			thumb.Save(filename)
 
 			content := c.PostForm("content")
+			//file, err := os.Open(fmt.Sprintf("assets/%s_%x.png",
+			//	time.Now().Format("20060102150405"), h[:4]))
+			//if err != nil {
+			//	log.Fatal(err)
+			//}
+			//
+			//image, err := png.Decode(file)
+			//if err != nil {
+			//	log.Fatal(err)
+			//}
+			//file.Close()
+			//
+			//buffer := new(bytes.Buffer)
+			//if err := jpeg.Encode(buffer, image, nil); err != nil {
+			//	log.Println("unable to encode image.")
+			//}
+			//imageBytes := buffer.Bytes()
 			file, err := c.FormFile("image")
-			c.SaveUploadedFile(file, fmt.Sprintf("assets/%s_%x.png", time.Now().Format("20060102150405"), h[:4]))
-			//c.String(http.StatusOK, fmt.Sprintf("'%s' uploaded!", file.Filename))
-
-			dbInsert(content, file)
+			//getFile(filename)
+			dbInsert(content, file, filename)
 			//302一時的なリダイレクト
 			c.Redirect(302, "/")
 		}
