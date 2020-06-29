@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <header>
+        <h1>
+            Index: Tweets
+        </h1>
+    </header>
+    <div class="wrap">
+        <div class="input">
+            <p>{{.err}}</p>
+            <form action="/new" method="post">
+                <p>Text :<input type="text" name="content" size="30" placeholder="type a text..."/></p>
+                <p><input type="submit" value="submit" /></p>
+            </form>
+        </div>
+        <div class="indexGet">
+            <ul>
+                {{range.tweets}}
+                    <li>
+                        {{.Content}}
+                        <label><a href="/detail/{{.ID}}">Edit</a></label>
+                        <label><a href="/delete_check/{{.ID}}">Delete</a></label>
+                    </li>
+                {{end}}
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
