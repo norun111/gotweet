@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <h2>Detail: ID{{.tweet.ID}}</h2>
+
+    <form method="post" action="/update/{{.tweet.ID}}">
+        <p>Content<input type="text" name="tweet" size="30" value="{{.tweet.Content}}" ></p>
+        <p><input type="submit" value="Send"></p>
+    </form>
+</body>
+</html>
