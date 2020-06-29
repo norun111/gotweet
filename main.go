@@ -5,6 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/go-sql-driver/mysql"
 	"fmt"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"strconv"
 )
@@ -39,8 +40,7 @@ func connectGorm() *gorm.DB {
 func dbInit() {
 	db := connectGorm()
 	defer db.Close()
-	db.AutoMigrate(&Tweet{}) //構造体に基づいてテーブル作成
-	db.AutoMigrate(&User{})
+	db.AutoMigrate(&Tweet{}, &User{}) //構造体に基づいてテーブル作成
 }
 
 //データインサート
@@ -86,6 +86,23 @@ func dbDelete(id int) {
 	var tweet Tweet
 	db.First(&tweet, id)
 	db.Delete(&tweet)
+}
+
+//ユーザー登録処理
+func createUser(username, password string) []error {
+	passwordEncrypt, _ := bcrypt.GenerateFromPassword([]byte(password),12)
+	hash := []byte(password)
+	err := bcrypt.CompareHashAndPassword(hash, []byte(password))
+	if err != nil {
+		panic(err)
+	}
+	db := connectGorm()
+	defer db.Close()
+
+	if err := db.Create(&User{Username: username, Password: string(passwordEncrypt)}).GetErrors(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func main() {
@@ -160,6 +177,29 @@ func main() {
 		}
 		dbDelete(id)
 		c.Redirect(302, "/")
+	})
+
+	//ユーザー登録画面
+	router.GET("/signup", func(c *gin.Context) {
+		c.HTML(200, "signup.html", gin.H{})
+	})
+
+	//ユーザー登録
+	router.POST("/signup", func(c *gin.Context) {
+		var form User
+		//validation
+		if err := c.Bind(&form); err != nil {
+			c.HTML(http.StatusBadRequest, "signup.html", gin.H{"err": err})
+			c.Abort()
+		} else {
+			username := c.PostForm("username")
+			password := c.PostForm("password")
+			//登録ユーザーが重複していた場合に弾く処理
+			if err := createUser(username, password); err != nil {
+				c.HTML(http.StatusBadRequest, "signup.html", gin.H{"err": err})
+			}
+			c.Redirect(302, "/")
+		}
 	})
 
 	router.Run()
