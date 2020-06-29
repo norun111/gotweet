@@ -1,19 +1,24 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
-	_ "github.com/go-sql-driver/mysql"
+	"crypto/sha1"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jinzhu/gorm"
+	"github.com/olahol/go-imageupload"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"strconv"
+	"time"
 	"tweet/crypto"
 )
 
 type Tweet struct {
 	gorm.Model
 	Content string	`form:"content" binding:"required"`
+	Image   *multipart.FileHeader  `form:"image"`
 }
 
 type User struct {
@@ -117,6 +122,8 @@ func main() {
 	router := gin.Default()
 	router.LoadHTMLGlob("views/*.html")
 
+	//router.Use(static.Serve("/", static.LocalFile("./assets", true)))
+
 	dbInit()
 
 	//一覧
@@ -128,13 +135,23 @@ func main() {
 	//登録
 	router.POST("/new", func(c *gin.Context) {
 		var form Tweet
-
+		img, err := imageupload.Process(c.Request, "image") //fieldにはname属性をいれる
+		if err != nil {
+			panic(err)
+		}
 		//validation
 		if err := c.Bind(&form); err != nil {
 			tweets := dbGetAll()
 			c.HTML(http.StatusBadRequest, "index.html", gin.H{"tweets": tweets, "err": err})
 			c.Abort()
 		} else {
+			thumb, err := imageupload.ThumbnailPNG(img, 300, 300)
+			if err != nil {
+				panic(err)
+			}
+			h := sha1.Sum(thumb.Data)
+			thumb.Save(fmt.Sprintf("files/%s_%x.png",
+				time.Now().Format("20060102150405"), h[:4]))
 			content := c.PostForm("content")
 			dbInsert(content)
 			//302一時的なリダイレクト
