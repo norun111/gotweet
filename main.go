@@ -17,8 +17,8 @@ import (
 
 type Tweet struct {
 	gorm.Model
-	Content string	`form:"content" binding:"required"`
-	Image   *multipart.FileHeader  `form:"image"`
+	Content string                `form:"content" binding:"required"`
+	Image   *multipart.FileHeader `form:"image"`
 }
 
 type User struct {
@@ -50,11 +50,11 @@ func dbInit() {
 }
 
 //データインサート
-func dbInsert(content string) {
+func dbInsert(content string, image *multipart.FileHeader) {
 	db := connectGorm()
 	defer db.Close()
 	//Insert処理
-	db.Create(&Tweet{Content: content})
+	db.Create(&Tweet{Content: content, Image: image})
 }
 
 //db更新
@@ -150,10 +150,12 @@ func main() {
 				panic(err)
 			}
 			h := sha1.Sum(thumb.Data)
-			thumb.Save(fmt.Sprintf("files/%s_%x.png",
+			thumb.Save(fmt.Sprintf("assets/%s_%x.png",
 				time.Now().Format("20060102150405"), h[:4]))
+
 			content := c.PostForm("content")
-			dbInsert(content)
+			image, err := c.FormFile("image")
+			dbInsert(content, image)
 			//302一時的なリダイレクト
 			c.Redirect(302, "/")
 		}
@@ -185,7 +187,7 @@ func main() {
 	//削除確認
 	router.GET("/delete_check/:id", func(c *gin.Context) {
 		n := c.Param("id")
-		id , err := strconv.Atoi(n)
+		id, err := strconv.Atoi(n)
 		if err != nil {
 			panic(err)
 		}
@@ -255,4 +257,3 @@ func main() {
 
 	router.Run()
 }
-
