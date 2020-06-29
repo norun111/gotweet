@@ -19,6 +19,7 @@ type Tweet struct {
 	gorm.Model
 	Content string                `form:"content" binding:"required"`
 	Image   *multipart.FileHeader `form:"image"`
+	//Image   [20]byte `form:"image"`
 }
 
 type User struct {
@@ -154,8 +155,11 @@ func main() {
 				time.Now().Format("20060102150405"), h[:4]))
 
 			content := c.PostForm("content")
-			image, err := c.FormFile("image")
-			dbInsert(content, image)
+			file, err := c.FormFile("image")
+			c.SaveUploadedFile(file, fmt.Sprintf("assets/%s_%x.png", time.Now().Format("20060102150405"), h[:4]))
+			//c.String(http.StatusOK, fmt.Sprintf("'%s' uploaded!", file.Filename))
+
+			dbInsert(content, file)
 			//302一時的なリダイレクト
 			c.Redirect(302, "/")
 		}
