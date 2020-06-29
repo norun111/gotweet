@@ -5,6 +5,13 @@
     <title>Title</title>
 </head>
 <body>
-
+    <div class="input">
+        <p>{{.err}}</p>
+        <form action="/signup" method="post">
+            <p>Username :<input type="text" name="username" placeholder=""/></p>
+            <p>Password :<input type="text" name="password" placeholder=""/></p>
+            <p><input type="submit" value="submit" /></p>
+        </form>
+    </div>
 </body>
 </html>
